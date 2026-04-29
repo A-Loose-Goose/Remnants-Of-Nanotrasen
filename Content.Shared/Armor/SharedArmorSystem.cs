@@ -5,8 +5,6 @@ using Content.Shared.Examine;
 using Content.Shared.Inventory;
 using Content.Shared.Silicons.Borgs;
 using Content.Shared.Verbs;
-using Robust.Shared.Audio;
-using Robust.Shared.Audio.Systems;
 using Robust.Shared.Random;
 using Robust.Shared.Utility;
 
@@ -19,7 +17,6 @@ public abstract class SharedArmorSystem : EntitySystem
 {
     [Dependency] private readonly ExamineSystemShared _examine = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
-    [Dependency] private readonly SharedAudioSystem _audio = default!;
 
     /// <inheritdoc />
     public override void Initialize()
@@ -66,27 +63,12 @@ public abstract class SharedArmorSystem : EntitySystem
             if (blockChance > penAmount)
             {
                 args.Args.Damage = DamageSpecifier.ApplyModifierSet(args.Args.Damage, component.Modifiers);
-                var damageCheck = args.Args.Damage.GetTotal();
-                if (damageCheck > 0)
-                {
-                    var chooseSound = _random.Next(1, 5);
-                    var sound = new SoundPathSpecifier($"/Audio/_Remnants/Weapons/Guns/Hits/bullet_ricochet_{chooseSound}.ogg");
-                    _audio.PlayPvs(sound, uid);
-                }
             }
         }
         else if (penCheck >= 10) // If penCheck is more than or is 10, armor is guaranteed to block
         {
             args.Args.Damage = DamageSpecifier.ApplyModifierSet(args.Args.Damage, component.Modifiers);
-            var damageCheck = args.Args.Damage.GetTotal();
-            if (damageCheck > 0)
-            {
-                var chooseSound = _random.Next(1, 5);
-                var sound = new SoundPathSpecifier($"/Audio/_Remnants/Weapons/Guns/Hits/bullet_ricochet_{chooseSound}.ogg");
-                _audio.PlayPvs(sound, uid);
-            }
         }
-
     }
 
     private void OnBorgDamageModify(EntityUid uid, ArmorComponent component,
