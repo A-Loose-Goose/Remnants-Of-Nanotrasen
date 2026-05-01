@@ -1,4 +1,5 @@
-﻿using Content.Shared.Clothing.Components;
+﻿using System.Security.Cryptography;
+using Content.Shared.Clothing.Components;
 using Content.Shared.Damage;
 using Content.Shared.Damage.Systems;
 using Content.Shared.Examine;
@@ -54,23 +55,46 @@ public abstract class SharedArmorSystem : EntitySystem
         var armorClass = component.ArmorClass * 10;
         var penCheck = armorClass - penetration;
 
-        if (penCheck <= 0)  // If penCheck is below or equal to 0, penetrate armor. Good for damage sources and armors that do not have penetration or armor class
-            return; // Yes, I know this is doing nothing. No, I do not care :)
-        else if (penCheck > 0 && penCheck < 10) // If penCheck is between 1-9, turn that into a random chance. Higher the value, the more likely it is to penetrate
+        if (component.CurrentDurability > 0)
         {
-            var blockChance = _random.Next(1, 101);
-            var penAmount = penCheck * 10;
-            if (blockChance > penAmount)
+            if (penCheck <=
+                0) // If penCheck is below or equal to 0, penetrate armor. Good for damage sources and armors that do not have penetration or armor class
+                return; // Yes, I know this is doing nothing. No, I do not care :)
+            else if
+                (penCheck > 0 &&
+                 penCheck < 10) // If penCheck is between 1-9, turn that into a random chance. Higher the value, the more likely it is to penetrate
             {
+                var blockChance = _random.Next(1, 101);
+                var penAmount = penCheck * 10;
+                if (blockChance > penAmount)
+                {
+                    var damageAmount = args.Args.Damage;
+                    args.Args.Damage = DamageSpecifier.ApplyModifierSet(args.Args.Damage, component.Modifiers);
+
+                    var damageRemainder = (int)(damageAmount.GetTotal() - args.Args.Damage.GetTotal());
+
+                    component.CurrentDurability -= damageRemainder;
+                    if (component.CurrentDurability < 0)
+                    {
+                        component.CurrentDurability = 0;
+                    }
+                }
+            }
+            else if (penCheck >= 10) // If penCheck is more than or is 10, armor is guaranteed to block, assuming the armor still has durability
+            {
+                var damageAmount = args.Args.Damage;
                 args.Args.Damage = DamageSpecifier.ApplyModifierSet(args.Args.Damage, component.Modifiers);
+
+                var damageRemainder = (int)(damageAmount.GetTotal() - args.Args.Damage.GetTotal());
+
+                component.CurrentDurability -= damageRemainder;
+                if (component.CurrentDurability < 0)
+                {
+                    component.CurrentDurability = 0;
+                }
             }
         }
-        else if (penCheck >= 10) // If penCheck is more than or is 10, armor is guaranteed to block
-        {
-            args.Args.Damage = DamageSpecifier.ApplyModifierSet(args.Args.Damage, component.Modifiers);
-        }
     }
-
     private void OnBorgDamageModify(EntityUid uid, ArmorComponent component,
         ref BorgModuleRelayedEvent<DamageModifyEvent> args)
     {
@@ -99,6 +123,10 @@ public abstract class SharedArmorSystem : EntitySystem
     {
         var msg = new FormattedMessage();
         msg.AddMarkupOrThrow(Loc.GetString("armor-class-value-examine", ("armorClass", component.ArmorClass)));
+        msg.PushNewline();
+        msg.AddMarkupOrThrow(Loc.GetString("armor-durability-examine",
+            ("currentDurability", component.CurrentDurability),
+            ("maxDurability", component.MaxDurability)));
         msg.PushNewline();
         msg.AddMarkupOrThrow(Loc.GetString("armor-examine"));
 

@@ -18,8 +18,23 @@ public sealed partial class ArmorComponent : Component
     [DataField(required: true)]
     public DamageModifierSet Modifiers = default!;
 
+    /// <summary>
+    /// The armor class of the armor. Higher the class, the higher penetration it can stop.
+    /// </summary>
     [DataField]
     public int ArmorClass;
+
+    /// <summary>
+    /// The armor's max durability.
+    /// </summary>
+    [DataField]
+    public int MaxDurability;
+
+    /// <summary>
+    /// The armor's current durability. If it hits 0, damage will always penetrate it no matter what. Makes HP Rounds have a fighting chance of actually beating a high armored player.
+    /// </summary>
+    [DataField]
+    public int CurrentDurability;
 
     /// <summary>
     /// A multiplier applied to the calculated point value
